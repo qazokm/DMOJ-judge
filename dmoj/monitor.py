@@ -11,11 +11,11 @@ from dmoj.judgeenv import startup_warnings, get_problem_watches
 from dmoj.utils.ansi import ansi_style
 
 try:
-    from watchdog.observers import Observer
+    from watchdog.observers.polling import PollingObserver
     from watchdog.events import FileSystemEventHandler
 except ImportError:
     startup_warnings.append('watchdog module not found, install it to automatically update problems')
-    Observer = None
+    PollingObserver = None
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +65,7 @@ class SendProblemsHandler(FileSystemEventHandler):
 
 class Monitor(object):
     def __init__(self):
-        if Observer is not None and not judgeenv.no_watchdog:
+        if PollingObserver is not None and not judgeenv.no_watchdog:
             if 'update_pings' in judgeenv.env:
                 logger.info('Using thread to ping urls: %r', judgeenv.env['update_pings'])
                 self._refresher = RefreshWorker(judgeenv.env['update_pings'])
@@ -73,7 +73,7 @@ class Monitor(object):
                 self._refresher = None
 
             self._handler = SendProblemsHandler(self._refresher)
-            self._monitor = monitor = Observer()
+            self._monitor = monitor = PollingObserver()
             for dir in get_problem_watches():
                 monitor.schedule(self._handler, dir, recursive=True)
                 logger.info('Scheduled for monitoring: %s', dir)
