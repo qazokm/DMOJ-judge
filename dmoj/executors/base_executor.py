@@ -29,12 +29,12 @@ class BaseExecutor(PlatformExecutorMixin):
     nproc = 0
     command = None
     command_paths = []
-    runtime_dict = env['runtime']
+    runtime_dict = env.runtime
     name = '(unknown)'
     test_program = ''
     test_name = 'self_test'
-    test_time = 10
-    test_memory = 65536
+    test_time = env.selftest_time_limit
+    test_memory = env.selftest_memory_limit
 
     def __init__(self, problem_id, source_code, **kwargs):
         self._dir = tempfile.mkdtemp(dir=env.tempdir)
@@ -262,8 +262,8 @@ class ScriptExecutor(BaseExecutor):
 
 
 class CompiledExecutor(BaseExecutor):
-    executable_size = 131072 * 1024  # 128mb
-    compiler_time_limit = 10
+    executable_size = env.compiler_size_limit * 1024
+    compiler_time_limit = env.compiler_time_limit
     compile_output_index = 1
 
     class TimedPopen(UniPopen):
@@ -352,7 +352,8 @@ class CompiledExecutor(BaseExecutor):
         # Use safe_communicate because otherwise, malicious submissions can cause a compiler
         # to output hundreds of megabytes of data as output before being killed by the time limit,
         # which effectively murders the MySQL database waiting on the site server.
-        return safe_communicate(process, None, outlimit=65536, errlimit=65536)[self.compile_output_index]
+        limit = env.compiler_output_character_limit
+        return safe_communicate(process, None, outlimit=limit, errlimit=limit)[self.compile_output_index]
 
     def get_compiled_file(self):
         return self._file(self.problem)

@@ -32,8 +32,10 @@ class StandardGrader(BaseGrader):
 
         input = case.input_data()  # cache generator data
 
-        self._current_proc = self.binary.launch(time=self.problem.time_limit, memory=self.problem.memory_limit,
-                                                pipe_stderr=True, io_redirects=case.io_redirects(),
+        self._current_proc = self.binary.launch(time=self.problem.time_limit,
+                                                memory=self.problem.memory_limit,
+                                                symlinks=case.config.symlinks,
+                                                pipe_stderr=True,
                                                 wall_time=case.config.wall_time_factor * self.problem.time_limit)
 
         error = self._interact_with_process(case, result, input)
@@ -109,7 +111,8 @@ class StandardGrader(BaseGrader):
                                    case_position=case.position,
                                    batch=case.batch,
                                    submission_language=self.language,
-                                   binary_data=case.has_binary_data)
+                                   binary_data=case.has_binary_data,
+                                   execution_time=result.execution_time)
         else:
             # Solution is guaranteed to receive 0 points
             check = False

@@ -10,4 +10,4 @@ class Executor(NullStdoutMixin, CompiledExecutor):
     test_program = 'main = interact id'
 
     def get_compile_args(self):
-        return [self.get_command(), '-O', '-o', self.problem, self._code]
+        return [self.get_command(), '-O2', '-o', self.problem, self._code]

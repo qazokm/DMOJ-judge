@@ -127,7 +127,6 @@ class Judge(object):
 
         class InvocationCase(object):
             config = ConfigNode({'unbuffered': False})
-            io_redirects = lambda: None
             input_data = lambda: input_data
 
         grader = self.get_grader_from_source(InvocationGrader, InvocationProblem(), language, source)
@@ -239,7 +238,11 @@ class Judge(object):
                 for batched_case in self.grade_cases(grader, case.batched_cases,
                                                      short_circuit=case.config['short_circuit'],
                                                      is_short_circuiting=is_short_circuiting):
-                    if (batched_case.result_flag & Result.WA) > 0 and not case.points:
+                    # A batched case just failed.
+                    # There are two cases where this means that we should completely short-circuit:
+                    # 1. If the batch was worth 0 points, to emulate the property of 0-point cases.
+                    # 2. If the short_circuit flag is true, see <https://github.com/DMOJ/judge/issues/341>.
+                    if (batched_case.result_flag & Result.WA) and (not case.points or short_circuit):
                         is_short_circuiting = True
                     yield batched_case
                 yield BatchEnd()
@@ -351,6 +354,13 @@ class ClassicJudge(Judge):
 def sanity_check():
     # Don't allow starting up without wbox/cptbox, saves cryptic errors later on
     if os.name == 'nt':
+        from judgeenv import env
+
+        # Nasty crashes will happen if tempdir isn't specified.
+        if not env.tempdir:
+            print('must specify `tempdir` in judge config to a directory readable by all users')
+            return False
+
         try:
             from .wbox import _wbox
         except ImportError:
