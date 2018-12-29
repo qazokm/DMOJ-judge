@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from __future__ import print_function
 
+import os
 import sys
 
 from dmoj.cli import main as cli_main
@@ -14,7 +15,15 @@ def main():
     else:
         if len(sys.argv) < 2 or '-h' in sys.argv or '--help' in sys.argv:
             print('DMOJ Docker Image: run with argument `cli` to use `dmoj-cli`', file=sys.stderr)
-        sys.argv = ['docker run ...', '-c', '/judge/judge.yml'] + sys.argv[1:]
+
+        site = sys.argv[1]
+        judge_id = int(os.environ.get("POD_NAME", "1").split("-")[-1])
+        judge_name = "judge" + str(judge_id)
+        with open("/etc/secret-volume/{}-password".format(judge_name)) as password_file:
+            judge_password = password_file.read()
+        args = ["-s", "-k", site, judge_name, judge_password]
+
+        sys.argv = ['docker run ...', '-c', '/judge/judge.yml'] + args
         sys.exit(judge_main())
 
 if __name__ == '__main__':
